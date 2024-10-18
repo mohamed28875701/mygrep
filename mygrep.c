@@ -49,7 +49,14 @@ int main(int argc,char* argv[]){
     if(strcmp(argv[1],"-v")==0 ||strcmp(argv[1],"--version")==0){
         printf("version 1.0.0\n");
     }
-    find_patterns(fopen("mygrep.c","rb"),"[A-Z]{3,}");
+    if(argc == 3){
+        FILE* f =fopen(argv[2],"rb");
+        if(f!=NULL){
+            find_patterns(fopen("mygrep.c","rb"),argv[1]);
+        }else{
+            printf("%s does not exist",argv[2]);
+        }
+    }
     /*char* dir = malloc(100*sizeof( char));
     if(getcwd(dir,100)!=NULL){
         printf("%s",dir);
