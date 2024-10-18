@@ -5,7 +5,7 @@
 #include <regex.h>
 void find_patterns(FILE* f,const char* pattern){
     regex_t regex;
-    regmatch_t pmatch[100];
+    regmatch_t pmatch[1];
     fseek(f,0,SEEK_END);
     long fsize = ftell(f);
     fseek(f,0,SEEK_SET);
@@ -13,19 +13,17 @@ void find_patterns(FILE* f,const char* pattern){
     fread(string,fsize,1,f);
     string[fsize]='\0';
     if(regcomp(&regex,pattern,0)==0){
-        if(regexec(&regex,string,100,pmatch,0)==0){
-            for(int i = 0;i!=100;i++){
-                if(pmatch[i].rm_so==-1){
+        while(regexec(&regex,string,1,pmatch,0)==0){
+                if(pmatch[0].rm_so==-1){
                     continue;
                 }
-                printf("match : %d",i);
-                size_t match_len=pmatch[i].rm_eo - pmatch[i].rm_so;
+                size_t match_len=pmatch[0].rm_eo - pmatch[0].rm_so;
                 char* match = malloc(match_len+1);
-                strncpy(match,string+pmatch[i].rm_so,match_len);
+                strncpy(match,string+pmatch[0].rm_so,match_len);
                 match[match_len]='\0';
                 printf("%s\n",match);
+                string+=pmatch[0].rm_eo;
                 free(match);
-            }
         }
     }
 
