@@ -24,20 +24,19 @@ void print_finds(regmatch_t* pmatch,char* string,regex_t regex){
             if(c==1){
                 printf("%s",string);
                 break;
-                
             }
             break;
         }
     }
 }
-void find_patterns(FILE* f,const char* pattern){
+void find_patterns(FILE* f,const char* pattern,int flags){
     regex_t regex;
     regmatch_t pmatch[1];
 
     char string[256];
     if(f!=NULL){
         while(fgets(string,sizeof(string),f)){
-            if(regcomp(&regex,pattern,REG_EXTENDED)==0){
+            if(regcomp(&regex,pattern,flags)==0){
                 print_finds(pmatch,string,regex);
             }else{
                 printf("Cant printf compile regex");
@@ -51,16 +50,35 @@ int main(int argc,char* argv[]){
         printf("no argument provided\n");
         return 0;
     }
-    if(strcmp(argv[1],"-v")==0 ||strcmp(argv[1],"--version")==0){
-        printf("version 1.0.0\n");
-    }
-    if(argc == 3){
-        FILE* f =fopen(argv[2],"rb");
-        if(f!=NULL){
-            find_patterns(f,argv[1]);
-        }else{
-            printf("%s does not exist",argv[2]);
+    int args=0;
+    int opt;
+    while((opt=getopt(argc,argv,"vEn"))!=-1){
+        if(opt=='v'){
+            printf("version 1.0.0\n");
+        }else if(opt=='E'){
+            if(args==0){
+                args=REG_EXTENDED;
+            }
+            else{
+                args=args|REG_EXTENDED;
+            }
+        }else if(opt=='n'){
+            if(args==0){
+                args=REG_ICASE;
+            }
+            else{
+                args=args|REG_ICASE;
+            }
         }
+        else if(opt=='?'){
+            fprintf(stderr,"Unknown option %d\n",optopt);
+        }
+    }
+    FILE* f =fopen(argv[argc-1],"rb");
+    if(f!=NULL){
+        find_patterns(f,argv[argc-2],args);
+    }else{
+        printf("%s does not exist",argv[argc-1]);
     }
     /*char* dir = malloc(100*sizeof( char));
     if(getcwd(dir,100)!=NULL){
