@@ -4,40 +4,45 @@
 #include <string.h>
 #include <regex.h>
 void print_finds(regmatch_t* pmatch,char* string,regex_t regex){
-    while(regexec(&regex,string,1,pmatch,0)==0){
-        if(pmatch[0].rm_so==-1){
-            continue;
-        }
-        size_t match_len=pmatch[0].rm_eo - pmatch[0].rm_so;
-        char* match = malloc(match_len+1);
-        strncpy(match,string+pmatch[0].rm_so,match_len);
-        match[match_len]='\0';
-        printf("\033[31m%s\033[0m",match);
-        for(int i=pmatch[0].rm_eo;i!=strlen(string);i++){
-            if(string[i]!='\n')
-                printf("%c",string[i]);
-            else{
-                printf("\n");
-                break;
+    int c = 0;
+    while(1){
+        if(regexec(&regex,string,1,pmatch,0)==0){
+            c=1;
+            for(int i=0;i!=strlen(string);i++){
+                if(i>=pmatch[0].rm_so && i<pmatch[0].rm_eo){
+                    printf("\033[31m%c\033[0m",string[i]);
+                    if(i==pmatch[0].rm_eo-1){
+                        string+=pmatch[0].rm_eo;
+                        break;
+                    }
+
+                }else{
+                    printf("%c",string[i]);
+                }
             }
+        } else {
+            if(c==1){
+                printf("%s",string);
+                break;
+                
+            }
+            break;
         }
-            string+=pmatch[0].rm_eo;
-        free(match);
     }
 }
 void find_patterns(FILE* f,const char* pattern){
     regex_t regex;
     regmatch_t pmatch[1];
-    fseek(f,0,SEEK_END);
-    long fsize = ftell(f);
-    fseek(f,0,SEEK_SET);
-    char* string =malloc(fsize+1);
-    fread(string,fsize,1,f);
-    string[fsize]='\0';
-    if(regcomp(&regex,pattern,REG_EXTENDED)==0){
-        print_finds(pmatch,string,regex);
-    }else{
-        printf("Cant compile regex");
+
+    char string[256];
+    if(f!=NULL){
+        while(fgets(string,sizeof(string),f)){
+            if(regcomp(&regex,pattern,REG_EXTENDED)==0){
+                print_finds(pmatch,string,regex);
+            }else{
+                printf("Cant printf compile regex");
+            }
+        }
     }
 
 }
@@ -52,7 +57,7 @@ int main(int argc,char* argv[]){
     if(argc == 3){
         FILE* f =fopen(argv[2],"rb");
         if(f!=NULL){
-            find_patterns(fopen("mygrep.c","rb"),argv[1]);
+            find_patterns(f,argv[1]);
         }else{
             printf("%s does not exist",argv[2]);
         }
