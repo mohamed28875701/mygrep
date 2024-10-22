@@ -5,10 +5,11 @@
 #include <regex.h>
 void print_finds(regmatch_t* pmatch,char* string,regex_t regex){
     int c = 0;
-    while(1){
-        if(regexec(&regex,string,1,pmatch,0)==0){
+    int regexecreturn;
+    do{
+        if((regexecreturn= regexec(&regex,string,1,pmatch,0))==0){
             c=1;
-            for(int i=0;i!=strlen(string);i++){
+        /*for(int i=0;i!=strlen(string);i++){
                 if(i>=pmatch[0].rm_so && i<pmatch[0].rm_eo){
                     printf("\033[31m%c\033[0m",string[i]);
                     if(i==pmatch[0].rm_eo-1){
@@ -19,15 +20,33 @@ void print_finds(regmatch_t* pmatch,char* string,regex_t regex){
                 }else{
                     printf("%c",string[i]);
                 }
+            }*/
+            if(pmatch[0].rm_so==pmatch[0].rm_eo){
+                printf("%c",string[0]);
+                string+=1;
             }
-        } else {
+            if(pmatch[0].rm_eo>=strlen(string)-1){
+                printf("%c",string[pmatch[0].rm_eo]);
+                break;
+            }
+                for(int i=0;i<pmatch[0].rm_so;i++){
+                    printf("a");;
+                    printf("%c",string[i]);
+                }
+            for(int i=pmatch[0].rm_so;i!=pmatch[0].rm_eo;i++){
+                printf("\033[31m%c\033[0m",string[i]);
+            }
+            string +=pmatch[0].rm_eo;
+        } else if(regexecreturn==REG_NOMATCH) {
             if(c==1){
                 printf("%s",string);
                 break;
             }
             break;
+        }else if(regexecreturn==REG_BADPAT){
+            fprintf(stderr,"Bad pattern %d",regexecreturn);
         }
-    }
+    }while(*string+'\0');
 }
 void find_patterns(FILE* f,const char* pattern,int flags){
     regex_t regex;
@@ -39,7 +58,8 @@ void find_patterns(FILE* f,const char* pattern,int flags){
             if(regcomp(&regex,pattern,flags)==0){
                 print_finds(pmatch,string,regex);
             }else{
-                printf("Cant printf compile regex");
+                printf("Cant compile regex");
+                break;
             }
         }
     }
@@ -52,7 +72,7 @@ int main(int argc,char* argv[]){
     }
     int args=0;
     int opt;
-    while((opt=getopt(argc,argv,"vEn"))!=-1){
+    while((opt=getopt(argc,argv,"vEi"))!=-1){
         if(opt=='v'){
             printf("version 1.0.0\n");
         }else if(opt=='E'){
@@ -62,7 +82,7 @@ int main(int argc,char* argv[]){
             else{
                 args=args|REG_EXTENDED;
             }
-        }else if(opt=='n'){
+        }else if(opt=='i'){
             if(args==0){
                 args=REG_ICASE;
             }
